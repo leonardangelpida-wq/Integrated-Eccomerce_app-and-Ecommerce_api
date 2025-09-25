@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="bg-dark py-5">
+  <div class="container px-4 px-lg-5 my-5">
+    <div class="text-center text-white">
+      <h1 class="display-4 fw-bolder">Shopping cart</h1>
+      <p class="lead fw-normal text-white-50 mb-0">With this shop homepage template</p>
+    </div>
+  </div>
+</header>
+<br/><br/><br/><br/><br/>
+<div class="container"> 
+{% if orders %}
+  {% for order in orders %}
+  <div class="card mb-3">
+    <div class="row g-0">
+      <div class="col-md-4">
+        <img src="{{ order.product.image }}" class="img-fluid rounded-start" style="width: 500px; height: 200px; object-fit: cover;" alt="{{ order.product.name }}">
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <h5 class="card-title">{{ order.product.name }}</h5>
+          <p class="card-text">{{ order.product.description }}</p>
+          <p class="card-text">₱{{ order.product.price }}</p>
+
+          <div class="row justify-content-start align-items-center">
+            <div class="col-md-2"><strong>Quantity:</strong></div>
+            <div class="col-md-3">
+              <select class="form-select" id="select{{order.order_id}}">
+  {% for i in "12345" %}
+    <option value="{{ forloop.counter }}" {% if order.quantity == forloop.counter %}selected{% endif %}>
+      {{ forloop.counter }}
+    </option>
+  {% endfor %}
+</select>
+            </div>
+          </div>
+
+          <br/>
+          <a href="{% url 'home'%}" class="btn btn-secondary">Home</a>
+          <button type="button" data-order="{{order.order_id}}" data-product="{{order.product.id}}" class="btn btn-secondary update-cart">Update</button>
+          <button type="button" data-order="{{order.order_id}}" class="btn btn-danger delete-cart">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <p>There's nothing in your cart...</p>
+{% endif %}
+</div>
+
+<script>
+  // Update quantity
+  $(document).on('click', '.update-cart', function(e){
+    e.preventDefault();
+    var orderId = $(this).data('order');
+    var productId = $(this).data('product');
+    var qty = $('#select' + orderId + ' option:selected').val();
+
+    $.ajax({
+      type: 'POST',
+      url: '{% url "cart_update" %}',
+      data: {
+        order_id: orderId,
+        product_id: productId,
+        product_qty: qty,
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        action: 'post'
+      },
+      success: function(json){
+        console.log("Updated:", json);
+        location.reload(); // auto-refresh after update
+      }
+    });
+  });
+
+  // Delete order
+  $(document).on('click', '.delete-cart', function(e){
+    e.preventDefault();
+    var orderId = $(this).data('order');
+
+    $.ajax({
+      type: 'POST',
+      url: '{% url "cart_delete" %}',
+      data: {
+        order_id: orderId,
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        action: 'post'
+      },
+      success: function(json){
+        console.log("Deleted:", json);
+        location.reload();
+      }
+    });
+  });
+</script>
+{% endblock %}
